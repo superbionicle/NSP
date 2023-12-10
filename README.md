@@ -8,8 +8,8 @@ This is the guideline I followed to complete my project. Written during and afte
 
 You will find soon the mentionned guidelinefile [README_EN.md](README_EN.md) once the French one is finished. 
 
-[/data](/data/) file contains all data processed.
-[/images](/images) file contains all illustrations used for the guideline.
+[/data](/data/) file contains all data processed.\
+[/images](/images) file contains all illustrations used for the guideline.\
 [/PDF Exemples](/PDF%20Exemples/) file contains all past project PDFs that inspired me and I used to know what should I do for my project.
 
 ___
@@ -24,6 +24,6 @@ Ceci est la trame que j'ai suivie afin de mener le projet à bien. Rédigée en 
 
 Vous trouverez dans le fichier [README_FR.md](README_FR.md) la trame en question.
 
-Le dossier [/data](/data/) contient l'ensemble des données traitées.
-Le dossier [/images](/images) contient l'ensemble des illustrations utilisées pour la trame.
+Le dossier [/data](/data/) contient l'ensemble des données traitées.\
+Le dossier [/images](/images) contient l'ensemble des illustrations utilisées pour la trame.\
 Le dossier [/PDF Exemples](/PDF%20Exemples/) contient l'ensemble des PDF qui m'ont servis d'aide pour savoir quoi faire lors de mon projet.

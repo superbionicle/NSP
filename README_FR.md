@@ -21,7 +21,7 @@ Le jeu de données utilisée est [Bakery sales.csv](data/Bakery%20sales.csv), ca
 ## Préambule
 ### Technologie, dépendances et notation utilisées
 * Technologie : __Python__
-* Dépendances : [requirements.txt](requirements.txt)
+* Dépendances : [requirements.txt](requirements.txt) (pas encore créé)
 * Notation de mon code : de manière générale, la notation camelCase a été privilégiée
 * Remarques sur la notation des variables dans les fonctions :
     - *iVariable* : entrée de la fonction
@@ -118,7 +118,7 @@ Pour la suite de l'étude, j'ai donc décidé de partir sur l'étude de l'ensemb
 ![histogramme jour/semaine](images/TEMP_EN_Days_Global.png)
 ![histogramme mois/an](images/TEMP_EN_Months_Global.png)
 
-Pour les ventes des différentes articles, j'ai décidé de regrouper certains articles sous une même bannière.
+Pour les ventes des différents articles, j'ai décidé de regrouper certains articles sous une même bannière.
 Par exemple, tous les types de baguette seront regroupés sous le même nom "baguette", peu importe s'il s'agit d'une tradition, d'une banette etc ...
 
 Un problème arrive vite cepandant : dans quelle mesure doit-on catégoriser les éléments, c'est-à-dire les regrouper sous une même bannière pour la suite du projet ?
