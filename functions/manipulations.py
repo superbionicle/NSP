@@ -45,6 +45,12 @@ def getListItems(iDataFrame):
 
     return oArticlesSold
 
+def getListTickets(iDataFrame):
+    oTickets = iDataFrame.ticket_number.unique()
+    oTickets.sort()
+
+    return oTickets
+
 
 def getTransactionsPerClient(iDataFrame):
     oDataFrameTransactions = iDataFrame.groupby("ticket_number").sum("total")
@@ -58,23 +64,23 @@ def groupedCategories(iDataFrame, iRefFile):
 
     dataFrame = iDataFrame
 
-    commonDataFrame = pd.merge(dataFrame, dataFrameRef, on="article")
+    oDataFrame = pd.merge(dataFrame, dataFrameRef, on="article")
+    oDataFrame["article"] = oDataFrame.apply(lambda row: row["article"] if pd.isnull(row["categorie"]) else row["categorie"],axis=1)
+    del oDataFrame["categorie"]
 
-    grouped = pd.DataFrame(
-        commonDataFrame.dropna(subset=["categorie"])
-        .groupby("categorie", as_index=False)[["Quantity", "total"]]
-        .sum()
-    )
-    grouped = grouped.rename(columns={"categorie": "article"})
+    return oDataFrame
 
-    noCategories = commonDataFrame[commonDataFrame["categorie"].isna()][
-        ["article", "Quantity", "total"]
-    ]
-    noCategories = pd.DataFrame(
-        noCategories.groupby("article", as_index=False).sum("total")
-    )
+def changeReference(iDataFrame,iRefFile):
+    dataFrameRef = pd.read_csv(iRefFile)
+    del dataFrameRef["Unnamed: 0"]
 
-    oDataFrame = pd.concat([grouped, noCategories], ignore_index=True)
+    dataFrame = iDataFrame
+
+    oDataFrame = pd.merge(dataFrame, dataFrameRef, on="article")
+    oDataFrame["categorie"] = oDataFrame.apply(lambda row: row["article"] if pd.isnull(row["categorie"]) else row["categorie"],axis=1)
+    del oDataFrame["article"]
+    oDataFrame = oDataFrame.rename(columns={"categorie": "article"})
+    oDataFrame["article"] = oDataFrame["article"].astype("str")
 
     return oDataFrame
 
@@ -90,6 +96,14 @@ def calculateProportions(iDataFrame):
 
     return oDataFrame
 
+def groupWithTreshold(iDataFrame,iThreshHold):
+    oDataFrame = iDataFrame
+    dataFrameRef = calculateProportions(iDataFrame)
+    dataFrameGrouped, otherLabel = groupedArticles(dataFrameRef,iThreshHold)
+    list = getListItems(dataFrameGrouped)
+    oDataFrame["article"] = oDataFrame.apply(lambda row: row["article"] if row["article"] in list else otherLabel,axis=1)
+
+    return(oDataFrame)
 
 def groupedArticles(iDataFrame, iThreshHold):
     dataFrame = iDataFrame
@@ -100,10 +114,35 @@ def groupedArticles(iDataFrame, iThreshHold):
     othersArticlesNumber = len(
         dataFrame[dataFrame["proportion of annual sales"] < iThreshHold].index
     )
-    articlesGrouped = dataFrame[
-        dataFrame["proportion of annual sales"] < iThreshHold
-    ].sum()
-    articlesGrouped[0] = "Others (" + str(othersArticlesNumber) + " articles)"
-    oDataFrameGrouped = oDataFrameGrouped._append(articlesGrouped, ignore_index=True)
+    if(othersArticlesNumber > 0):
+        articlesGrouped = dataFrame[
+            dataFrame["proportion of annual sales"] < iThreshHold
+        ].sum()
+        oOthers = "Others (" + str(othersArticlesNumber) + " articles)"
+        articlesGrouped[0] = "Others (" + str(othersArticlesNumber) + " articles)"
+        oDataFrameGrouped = oDataFrameGrouped._append(articlesGrouped, ignore_index=True)
+        return (oDataFrameGrouped,oOthers)
+    else:
+        return(dataFrame,"")
 
-    return oDataFrameGrouped
+def createArticlesNodesFile(iListArticles,iStorageFile="data/"):
+    dataFrame = pd.DataFrame({"id":iListArticles,"label":iListArticles})
+    fileName = iStorageFile+"articles-nodes.csv"
+
+    dataFrame.to_csv(fileName,sep='\t', index=False)
+
+def createTicketsNodesFile(iListTickets,iStorageFile="data/"):
+    dataFrame = pd.DataFrame({"id":iListTickets,"label":iListTickets})
+    fileName = iStorageFile+"tickets-nodes.csv"
+
+    dataFrame.to_csv(fileName,sep='\t', index=False)
+    
+def createEdgesFile(iDataFrame,iStorageFile="data/"):
+    dataFrame = iDataFrame[["ticket_number","article","Quantity"]]
+    filename = iStorageFile+"edges.csv"
+
+    dataFrame = dataFrame.rename(columns={"ticket_number": "Target"})
+    dataFrame = dataFrame.rename(columns={"article": "Source"})
+    dataFrame = dataFrame.rename(columns={"Quantity": "Weight"})
+
+    dataFrame.to_csv(filename,sep='\t', index=False)

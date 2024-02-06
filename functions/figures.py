@@ -2,29 +2,42 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-import sys
 import os
 
 currentDir = os.path.dirname(os.path.abspath(__file__))
 
 import manipulations
 
-def createHistogram(iDataFrame, iXValues, iYValues, iTitleCommentary):
-    plt.figure()
-    plt.figure(figsize=(40, 15))
+HIST_SIZE = (30, 10)
+DIAG_SIZE_1 = 15
+DIAG_SIZE_2 = 10
 
+
+def createHistogram(iDataFrame, iXValues, iYValues, iTitle, iFileName, iStorageFile):
+    fileName = iStorageFile + iFileName
+    plt.figure(figsize=(40, 15))
     plt.bar(iDataFrame[iXValues], iDataFrame[iYValues])
 
     plt.xlabel(iXValues)
     plt.xticks(rotation=90)
-
     plt.ylabel(iYValues)
 
-    plt.title(iTitleCommentary)
-    plt.show()
+    plt.title(iTitle)
+    plt.savefig(fileName)
 
 
-def createHistogramByMonth(iDataFrame, iTitleCommentary):
+def extension(iTitleCommentary, ioFileName, ioTitle):
+    if iTitleCommentary != "":
+        ioFileName += "_" + iTitleCommentary
+        ioTitle += ", " + iTitleCommentary
+    return (ioFileName, ioTitle)
+
+
+def createHistogramByMonth(iDataFrame, iTitleCommentary, iStorageFile):
+    fileName = iStorageFile + "Sells_Months"
+    title = "Proportion of items sold per month in a work year"
+    fileName, title = extension(iTitleCommentary, fileName, title)
+
     months = [
         "Jan",
         "Feb",
@@ -41,16 +54,13 @@ def createHistogramByMonth(iDataFrame, iTitleCommentary):
     ]
 
     dataFrame = iDataFrame
-
     dataFrame["Month"] = dataFrame["date"].dt.month
     dataFrame = dataFrame.groupby("Month", as_index=False).sum("Quantity")
 
     monthsNumber = dataFrame["Month"].max()
     period = np.linspace(1, monthsNumber, monthsNumber)
 
-    plt.figure()
-    plt.figure(figsize=(30, 10))
-
+    plt.figure(figsize=HIST_SIZE)
     plt.hist(
         dataFrame["Month"],
         weights=dataFrame["Quantity"],
@@ -60,15 +70,18 @@ def createHistogramByMonth(iDataFrame, iTitleCommentary):
 
     plt.xlabel("Months")
     plt.xticks(period, months[:monthsNumber])
-
     plt.ylabel("Quantities sold")
 
-    plt.title("Proportion of items sold per month in a work year " + iTitleCommentary)
+    plt.title(title)
     plt.tight_layout()
-    plt.show()
+    plt.savefig(fileName)
 
 
-def createHistogramByDayWeek(iDataFrame, iTitleCommentary):
+def createHistogramByDayWeek(iDataFrame, iTitleCommentary, iStorageFile):
+    fileName = iStorageFile + "Sells_Days"
+    title = "Proportion of items sold per day in a work week"
+    fileName, title = extension(iTitleCommentary, fileName, title)
+
     daysOfWeek = {
         0: "Monday",
         1: "Tuesday",
@@ -95,9 +108,7 @@ def createHistogramByDayWeek(iDataFrame, iTitleCommentary):
     dataFrame["Day of week"] = dataFrame["Day of week"].map(daysOfWeek)
     dataFrame = dataFrame.groupby("Day of week", as_index=False).sum("Quantity")
 
-    plt.figure()
-    plt.figure(figsize=(30, 10))
-
+    plt.figure(figsize=HIST_SIZE)
     plt.hist(
         dataFrame["Day of week"],
         weights=dataFrame["Quantity"],
@@ -107,15 +118,18 @@ def createHistogramByDayWeek(iDataFrame, iTitleCommentary):
 
     plt.xlabel("Days")
     plt.xticks(days, daysWeek)
-
     plt.ylabel("Quantities sold")
 
-    plt.title("Proportion of items sold per day in a work week " + iTitleCommentary)
+    plt.title(title)
     plt.tight_layout()
-    plt.show()
+    plt.savefig(fileName)
 
 
-def createHistogramByHoursOfDay(iDataFrame, iTitleCommentary):
+def createHistogramByHoursOfDay(iDataFrame, iTitleCommentary, iStorageFile):
+    fileName = iStorageFile + "Sells_Hours"
+    title = "Proportion of items sold per hour in a work day"
+    fileName, title = extension(iTitleCommentary, fileName, title)
+
     dataFrame = iDataFrame
 
     minHour = (pd.Timestamp(min(dataFrame["time"])).floor(freq="H")).time().hour
@@ -127,9 +141,7 @@ def createHistogramByHoursOfDay(iDataFrame, iTitleCommentary):
     dataFrame["Time period"] = pd.to_datetime(dataFrame["time"]).dt.hour
     dataFrame = dataFrame.groupby("Time period", as_index=False).sum("Quantity")
 
-    plt.figure()
-    plt.figure(figsize=(30, 10))
-
+    plt.figure(figsize=HIST_SIZE)
     plt.hist(
         dataFrame["Time period"],
         weights=dataFrame["Quantity"],
@@ -139,61 +151,69 @@ def createHistogramByHoursOfDay(iDataFrame, iTitleCommentary):
 
     plt.xlabel("Hours")
     plt.xticks(hours, period)
-
     plt.ylabel("Quantities sold")
 
-    plt.title("Proportion of items sold per hour in a work day " + iTitleCommentary)
-    plt.show()
+    plt.title(title)
+    plt.savefig(fileName)
 
 
-def getAnnualSales(iDataFrame, iThreshold, iTitleCommentary,isLabelRotating=False):
+def getAnnualSales(iDataFrame, iThreshold, iTitleCommentary, iStorageFile):
+    fileName = iStorageFile + "AS"
+    if len(iThreshold) > 1:
+        fileName += "_Thresholds"
+    title = "Ratio of items sold"
+    fileName, title = extension(iTitleCommentary, fileName, title)
+
     dataFrame = manipulations.calculateProportions(iDataFrame)
 
-    plt.figure()
-    plt.figure(figsize=(30, 5))
+    plt.figure(figsize=(DIAG_SIZE_1 * len(iThreshold), DIAG_SIZE_2))
 
     for index, threshold in enumerate(iThreshold):
         plt.subplot(1, len(iThreshold), index + 1)
-
-        tempDataFrame = manipulations.groupedArticles(dataFrame,threshold)
-        tempDataFrame = tempDataFrame.sort_values(by=["proportion of annual sales"], ascending=False)
+        plt.title("Threshold : " + str(threshold) + "%")
+        tempDataFrame,temp = manipulations.groupedArticles(dataFrame, threshold)
+        tempDataFrame = tempDataFrame.sort_values(
+            by=["proportion of annual sales"], ascending=False
+        )
 
         plt.pie(
             tempDataFrame["proportion of annual sales"],
             labels=tempDataFrame["article"],
-            rotatelabels=isLabelRotating,
+            rotatelabels=True,
             labeldistance=0.5,
         )
 
-    plt.title("ratio of items sold "+iTitleCommentary)
-    plt.show()
+    plt.suptitle(title)
+    plt.savefig(fileName)
 
 
-def compareAnnualeSalesCategories(iDataFrames, iThreshold, iTitleCommentary,isLabelRotating=False):
-    plt.figure()
-    plt.figure(figsize=(30, 5))
+def compareAnnualeSalesCategories(
+    iDataFrames, iThreshold, iTitleCommentary, iStorageFile
+):
+    fileName = iStorageFile + "AS_Compare"
+    title = "Comparaison of different grouping choices"
+    fileName, title = extension(iTitleCommentary, fileName, title)
+
+    plt.figure(figsize=(DIAG_SIZE_1, DIAG_SIZE_2))
 
     for index, dataFrame in enumerate(iDataFrames):
         plt.subplot(1, len(iDataFrames), index + 1)
-
-        tempDataFrame = manipulations.calculateProportions(dataFrame)
-        tempDataFrame = manipulations.groupedArticles(tempDataFrame,iThreshold)
+        plt.title("Category " + dataFrame[0])
+        tempDataFrame = manipulations.calculateProportions(dataFrame[1])
+        tempDataFrame,temp = manipulations.groupedArticles(tempDataFrame, iThreshold)
 
         plt.pie(
             tempDataFrame["proportion of annual sales"],
             labels=tempDataFrame["article"],
-            rotatelabels=isLabelRotating,
+            rotatelabels=True,
             labeldistance=0.5,
         )
 
-    plt.title("Comparaison of different grouping choices "+iTitleCommentary)
-    plt.show()
+    plt.suptitle(title)
+    plt.savefig(fileName)
 
 
-def getIllustrations(iDataFrame,iTitleCommentary,iThreshold=[0],isLabelRotating=False):
-    createHistogram(iDataFrame,"article","Quantity",iTitleCommentary)
-    createHistogramByHoursOfDay(iDataFrame,iTitleCommentary)
-    createHistogramByDayWeek(iDataFrame,iTitleCommentary)
-    createHistogramByMonth(iDataFrame,iTitleCommentary)
-    getAnnualSales(iDataFrame,iThreshold,iTitleCommentary,isLabelRotating)
-
+def getIllustrations(iDataFrame, iTitleCommentary, iStorageFile):
+    createHistogramByHoursOfDay(iDataFrame, iTitleCommentary, iStorageFile)
+    createHistogramByDayWeek(iDataFrame, iTitleCommentary, iStorageFile)
+    createHistogramByMonth(iDataFrame, iTitleCommentary, iStorageFile)
